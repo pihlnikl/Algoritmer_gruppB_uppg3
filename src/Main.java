@@ -8,10 +8,7 @@ import javax.swing.*;
 public class Main {
     public static void main(String[] args) throws IOException, FileFormatException {
 
-        // Choose a file in the folder Graphs in the current directory
-        JFileChooser jf = new JFileChooser("Graphs");
-        int result = jf.showOpenDialog(null);
-        File selectedFile = jf.getSelectedFile();
+        File selectedFile = new File("Words.txt");
         Graph g = readGraph(selectedFile);
         TopSort topSort = new TopSort();
 
@@ -21,7 +18,6 @@ public class Main {
         catch (CycleFound e){
             System.out.println(e.getMessage());
         }
-
 
     }
 
@@ -33,55 +29,31 @@ public class Main {
         String line=null;
 
         try {
-            // Skip over comment lines in the beginning of the file
-            while ( !(line = r.readLine()).equalsIgnoreCase("[Vertex]") ) {} ;
-
-            // Read all vertex definitions
-            while (!(line=r.readLine()).equalsIgnoreCase("[Edges]") ) {
+            // Read all lines
+            while ((line = r.readLine()) != null) {
                 if (line.trim().length() > 0) {  // Skip empty lines
                     try {
-                        // Split the line into a comma separated list V1,V2 etc
-                        String[] nodeNames=line.split(",");
-
-                        for (String n:nodeNames) {
-                            String node = n.trim();
-                            // Add node to graph
-                            g.addNode(node);
-                        }
-
-                    } catch (Exception e) {   // Something wrong in the graph file
+                        // Add node to graph
+                        g.addNode(line);
+                    } catch (Exception e) {   // Something wrong in the words file
                         r.close();
-                        throw new FileFormatException("Error in vertex definitions");
+                        throw new FileFormatException("Error reading words");
                     }
                 }
             }
 
         } catch (NullPointerException e1) {  // The input file has wrong format
-            throw new FileFormatException(" No [Vertex] or [Edges] section found in the file " + selectedFile.getName());
+            throw new FileFormatException("No words found in " + selectedFile.getName());
+        }
+        // Get map of nodes from Graph
+        Map<String, Vertex> nodes = g.getNodes();
+
+        // Iterate each word and add possible edges
+        for (String word : nodes.keySet()) {
+            g.addEdge(word);
         }
 
-        // Read all edge definitions
-        while ( (line=r.readLine()) !=null ) {
-            if (line.trim().length() > 0) {  // Skip empty lines
-                try {
-                    String[] edges=line.split(",");           // Edges are comma separated pairs e1:e2
-
-                    for (String e:edges) {       // For all edges
-                        String[] edgePair = e.trim().split(":"); //Split edge components v1:v2
-                        String v = edgePair[0].trim();
-                        String w = edgePair[1].trim();
-                        // Add edges to graph
-                        g.addEdge(v, w);
-                    }
-
-                } catch (Exception e) { //Something is wrong, Edges should be in format v1:v2
-                    r.close();
-                    throw new FileFormatException("Error in edge definition");
-                }
-            }
-        }
         r.close();  // Close the reader
-        //g.printGraph(); // Prints the adjacency list
         return g;
     }
 }
@@ -100,17 +72,41 @@ class Graph {
     public Graph() {
         nodes = new HashMap<>();
     }
-    // Create Vertex using given string, add to nodes
-    public void addNode(String name) {
-        nodes.put(name, new Vertex(name));
+    // Create Vertex using given word, add to nodes
+    public void addNode(String word) {
+        nodes.put(word, new Vertex(word));
     }
-    // Get the source Vertex and destination Vertex from nodes by searching with the given string
-    public void addEdge(String v, String w) {
-        Vertex source = nodes.get(v);
-        Vertex destination = nodes.get(w);
-        // Add destination as adjacent to source, increase indegree of destination
-        source.addAdjacentNode(destination);
-        destination.addDegree();
+
+    // Getter for nodes
+    public Map<String, Vertex> getNodes() {
+        return nodes;
+    }
+
+    // Add edges to the words
+    public void addEdge(String w) {
+        // Iterate the "nodes" map and compare each word to given word (parameter)
+        Vertex source = nodes.get(w);
+        for (String word : nodes.keySet()) {
+            int diffs = 0;
+            if(word != source.name) {
+                // Compare each letter and count differences, break if more than 2 differences found
+                for (int i = 0; i < word.length(); i++) {
+                    if (word.charAt(i) != source.name.charAt(i)) {
+                        diffs++;
+                        if (diffs > 1) {
+                            break;
+                        }
+                    }
+                }
+                // Words with exactly 1 difference are added as adjacent (each other's edges)
+                if (diffs == 1) {
+                    Vertex destination = nodes.get(word);
+                    source.addAdjacentNode(destination);
+                    destination.addAdjacentNode(source);
+                    destination.addDegree();
+                }
+            }
+        }
     }
 
     // Print, for troubleshooting
@@ -186,15 +182,12 @@ class TopSort {
         }
 
         // If no cycle in graph, print topological order
-        System.out.println("Topological order: ");
-        for (Vertex v : topOrder) {
-            System.out.println(v.name);
-        }
-
-
+        //System.out.println("Topological order: ");
+        //for (Vertex v : topOrder) {
+        //    System.out.println(v.name);
+        //}
     }
 }
-
 
 // CycleFound
 class CycleFound extends Exception{
