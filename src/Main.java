@@ -1,19 +1,25 @@
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import javax.swing.*;
+import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws IOException, FileFormatException {
 
+        Scanner scanner = new Scanner(System.in);
+        // The code reads the string written by the user, and assigns it
+        // to program memory "String message = (string that was given as input)"
+        System.out.println("First word: ");
+        String wordA = scanner.nextLine();
+        System.out.println("Second word: ");
+        String wordB = scanner.nextLine();
+
         File selectedFile = new File("Words.txt");
         Graph g = readGraph(selectedFile);
-        TopSort topSort = new TopSort();
+        shortestPath shortestPath = new shortestPath();
 
         try {
-            topSort.TopSort(g);
+            shortestPath.shortestPath(g.getNodes().get(wordA));
         }
         catch (CycleFound e){
             System.out.println(e.getMessage());
@@ -103,7 +109,6 @@ class Graph {
                     Vertex destination = nodes.get(word);
                     source.addAdjacentNode(destination);
                     destination.addAdjacentNode(source);
-                    destination.addDegree();
                 }
             }
         }
@@ -121,12 +126,14 @@ class Graph {
 
 class Vertex {
     String name;
-    int indegree;
+    int dist;
     List<Vertex> adjacentNodes;
+    List<Vertex> path;
 
     public Vertex(String name) {
         this.name = name;
-        this.indegree = 0;
+        this.dist = -1;
+        this.path = new ArrayList<>();
         this.adjacentNodes = new ArrayList<>();
     }
 
@@ -134,58 +141,33 @@ class Vertex {
         this.adjacentNodes.add(node);
     }
 
-    public void addDegree() {
-        this.indegree++;
+    public List<Vertex> getPath() {
+        return path;
+    }
+
+    public void addToPath (Vertex vertex) {
+        this.path.add(vertex);
     }
 
 }
 
-class TopSort {
-
-    public void TopSort(Graph g) throws CycleFound {
-        Map<Vertex, Integer> indegree = new HashMap<>();
-        int counter = 0;
-        List<Vertex> topOrder = new ArrayList<>();
-
-        // Add indegree for each node
-        for (Vertex v : g.nodes.values()) {
-            indegree.put(v, v.indegree);
-        }
-
-        Queue q = new Queue();
-
-        // Enqueue zero-indegree vertices
-        for (Vertex v : g.nodes.values()) {
-            if (indegree.get(v) == 0) {
-                q.enqueue(v);
-            }
-        }
-
+class shortestPath {
+    public void shortestPath(Vertex s) throws CycleFound {
+        Queue q;
+        q = new Queue();
+        Vertex v;
+        q.enqueue(s);
+        s.dist = 0;
         while (!q.isEmpty()) {
-
-            Vertex v = q.dequeue();
-            topOrder.add(v);
-            counter++;
-
-            // Add indegree for each adjacent node
+            v = q.dequeue();
             for (Vertex w : v.adjacentNodes) {
-                indegree.put(w, indegree.get(w) - 1);
-                if (indegree.get(w) == 0) {
+                if (w.dist < 0) {
+                    w.dist = v.dist+1;
+                    w.addToPath(v);
                     q.enqueue(w);
                 }
             }
         }
-
-
-        if (counter != g.nodes.size()) {
-            throw new CycleFound("Cycle found in graph");
-        }
-
-        // If no cycle in graph, print topological order
-        //System.out.println("Topological order: ");
-        //for (Vertex v : topOrder) {
-        //    System.out.println(v.name);
-        //}
     }
 }
 
