@@ -144,12 +144,14 @@ class Vertex {
     public List<Vertex> getPath() {
         return path;
     }
+    // Recursively print path to first word
     public void printPath() {
         if (this.path != null && !this.path.isEmpty()) {
             this.path.get(this.path.size() - 1).printPath();
         }
         System.out.println(this.name);
     }
+    // Add 'previous' node/word to current nodes/words path
     public void addToPath (Vertex vertex) {
         this.path.add(vertex);
     }
