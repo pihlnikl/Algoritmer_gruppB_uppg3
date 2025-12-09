@@ -17,6 +17,7 @@ public class Main {
         File selectedFile = new File("Words.txt");
         Graph g = readGraph(selectedFile);
         shortestPath shortestPath = new shortestPath();
+        printPath printPath = new printPath(); // lägger kommentarer så ni vet var min kod är då den säkert behöver ändras
 
         try {
             shortestPath.shortestPath(g.getNodes().get(wordA));
@@ -24,6 +25,7 @@ public class Main {
         catch (CycleFound e){
             System.out.println(e.getMessage());
         }
+        printPath.printPath(g.getNodes().get(wordB)); // lägger kommentarer så ni vet var min kod är då den säkert behöver ändras
 
     }
 
@@ -228,5 +230,19 @@ class Queue {
     public boolean isEmpty() {
         // Checks if queue is empty
         return (last == null);
+    }
+}
+
+class printPath { // lägger kommentarer så ni vet var min kod är då den säkert behöver ändras
+    public void printPath(Vertex e) {
+        Stack<Object> path = new Stack<>();
+        List<Vertex> next = e.getPath();
+        for (Vertex vertex : next) {
+            path.add(vertex.name);
+        }
+        for (Object names : path) {
+            System.out.println (names + " -> ");
+        }
+        System.out.println (e.name);
     }
 }
